@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Excel Website Crawler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: #020617;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Upload Excel → Crawl Websites</h1>
+
+    <input
+      type="file"
+      id="fileInput"
+      accept=".xlsx,.xls"
+    />
+
+    <button id="uploadBtn">
+      Start Crawling
+    </button>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const N8N_WEBHOOK_URL = "https://n8n.smbjugaad.com/webhook-test/lead-scrape";
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const statusEl = document.getElementById("status");
+
+    uploadBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+
+      if (!file) {
+        statusEl.textContent = "❌ Please select an Excel file";
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      statusEl.textContent = "⏳ Uploading and starting crawl...";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch(N8N_WEBHOOK_URL, {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error("Request failed");
+        }
+
+        statusEl.textContent =
+          "✅ Upload successful. Crawling in progress.\nYou will receive the output via n8n.";
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent =
+          "❌ Failed to start crawl. Check console or n8n logs.";
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
