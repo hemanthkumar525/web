@@ -77,48 +77,61 @@
   </div>
 
   <script>
-    const N8N_WEBHOOK_URL = "https://n8n.smbjugaad.com/webhook/lead-scrap";
+  const N8N_WEBHOOK_URL = "https://n8n.smbjugaad.com/webhook/lead-scrap";
 
-    const fileInput = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
-    const statusEl = document.getElementById("status");
+  const fileInput = document.getElementById("fileInput");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const statusEl = document.getElementById("status");
 
-    uploadBtn.addEventListener("click", async () => {
-      const data = fileInput.files[0];
+  uploadBtn.addEventListener("click", async () => {
+    const file = fileInput.files[0];
 
-      if (!data) {
-        statusEl.textContent = "❌ Please select an Excel file";
-        return;
+    if (!file) {
+      statusEl.textContent = "❌ Please select an Excel file";
+      return;
+    }
+
+    uploadBtn.disabled = true;
+    statusEl.textContent = "⏳ Uploading & processing…";
+
+    const formData = new FormData();
+    formData.append("data", file);
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
       }
 
-      uploadBtn.disabled = true;
-      statusEl.textContent = "⏳ Uploading and starting crawl...";
+      // 🔑 THIS IS THE IMPORTANT PART
+      const blob = await response.blob();
 
-      const formData = new FormData();
-      formData.append("data", data);
+      // Create download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Indiana_Website.xlsx"; // same name as n8n
+      document.body.appendChild(a);
+      a.click();
 
-      try {
-        const response = await fetch(N8N_WEBHOOK_URL, {
-          method: "POST",
-          body: formData
-        });
+      // Cleanup
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
-        if (!response.ok) {
-          throw new Error("Request failed");
-        }
+      statusEl.textContent = "✅ Download started";
 
-        statusEl.textContent =
-          "✅ Upload successful. Crawling in progress.\nYou will receive the output via n8n.";
-
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent =
-          "❌ Failed to start crawl. Check console or n8n logs.";
-      } finally {
-        uploadBtn.disabled = false;
-      }
-    });
-  </script>
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "❌ Failed. Check console / n8n logs.";
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+</script>
 
 </body>
 </html>
